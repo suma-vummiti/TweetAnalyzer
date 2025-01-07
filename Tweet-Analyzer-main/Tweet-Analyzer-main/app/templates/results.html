@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f6f7;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+
+        .header {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #2980b9;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #2980b9;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .list-group-item {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #333;
+            border: none;
+        }
+
+        .chart-container {
+            width: 80%;
+            margin: 0 auto;
+            margin-top: 20px;
+        }
+
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-group button {
+            margin: 0 5px;
+        }
+
+        .positive-tweet {
+            background-color:  #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .negative-tweet {
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+       
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2 class="header">Tweet Analyzer</h2>
+
+        <!-- Buttons to Switch Between Charts -->
+        <div class="btn-group">
+            <button id="barChartBtn" class="btn btn-primary">Bar Chart</button>
+            <button id="pieChartBtn" class="btn btn-success">Pie Chart</button>
+            <button id="lineChartBtn" class="btn btn-info">Line Chart</button>
+        </div>
+
+        <!-- Chart Canvas -->
+        <div class="chart-container">
+            <canvas id="chartCanvas"></canvas>
+        </div>
+
+       
+
+        <!-- Tweets Section -->
+        <!-- Check if results are available -->
+{% if results %}
+<div class="results-section mt-5">
+    <h3>Tweets containing "{{ keyword }}"</h3>
+
+    <!-- Positive Tweets -->
+    <div class="positive-tweet-section">
+        <h4>Positive Tweets : 😇</h4>
+        {% if positive_tweets %}
+            {% for tweet in positive_tweets %}
+            <div class="positive-tweet">{{ tweet }}</div>
+            {% endfor %}
+        {% else %}
+            <p>No positive tweets found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Negative Tweets -->
+    <div class="negative-tweet-section">
+        <h4>Negative Tweets : 😔</h4>
+        {% if negative_tweets %}
+            {% for tweet in negative_tweets %}
+            <div class="negative-tweet">{{ tweet }}</div>
+            {% endfor %}
+        {% else %}
+            <p>No negative tweets found.</p>
+        {% endif %}
+    </div>
+
+    
+</div>
+{% elif keyword %}
+<div class="results-section mt-5">
+    <p>No tweets found with the given keyword <b>"{{keyword}}"</b> . Please try another one.</p>
+</div>
+{% endif %}
+{%if results%}
+<div id="sentiment-data" 
+    data-sentiment="{{ sentiment_values | tojson }}",
+    data-positive-length="{{ positive_tweets | length if positive_tweets else 0 }}",
+    data-negative-length="{{ negative_tweets | length if negative_tweets else 0 }}",
+    
+</div>
+{% endif %}
+
+    </div>
+
+    
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Data for the charts (Replace this with real data fetched from the server)
+        const labels = ['Positive', 'Negative'];
+        const sentimentDataElement = document.getElementById('sentiment-data');
+        const sentimentValues = JSON.parse(sentimentDataElement.getAttribute('data-sentiment'));
+        const positiveLength = sentimentDataElement.getAttribute('data-positive-length');
+        const negativeLength = sentimentDataElement.getAttribute('data-negative-length');
+        
+        const dataValues = sentimentValues;
+        
+ // Example data: Replace with tweet sentiment analysis data
+
+        // Chart rendering function
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        let currentChart;
+
+        function renderChart(chartType) {
+            // Destroy current chart instance if it exists
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            currentChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tweet Sentiment Analysis',
+                        data: dataValues,
+                        backgroundColor: ['#228a3a', '#FF6384'],
+                        borderColor: ['#228a3a', '#d62929'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: chartType === 'bar' || chartType === 'line' ? {
+                        y: {
+                            beginAtZero: true
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        // Event listeners for buttons
+        document.getElementById('barChartBtn').addEventListener('click', () => renderChart('bar'));
+        document.getElementById('pieChartBtn').addEventListener('click', () => renderChart('pie'));
+        document.getElementById('lineChartBtn').addEventListener('click', () => renderChart('line'));
+
+        // Render bar chart by default
+        renderChart('pie');
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
